@@ -1,5 +1,5 @@
 import sys
-
+import SearchingRecursive as SR
 try:
     import Tkinter as tk
 except ImportError:
@@ -29,23 +29,31 @@ def drawBoat(Canvas,x,y):
     global boatimg
     boatimg = imgtk
     Canvas.create_image(x,y,image = boatimg,anchor = "nw")
-def drawObstacle(Canvas,x,y):
+def addObstacles(x,y):
     img = Image.open("obstacle.png")
     img = img.resize((18, 18), Image.ANTIALIAS)
     imgtk = ImageTk.PhotoImage(img)
     # Canvas.grid()
     global obstacles
-    obstacles.append(imgtk)
-    Canvas.create_image(x, y, image=imgtk, anchor="nw")
-def drawFuel(Canvas,x,y):
+    obstacles.append({"img": imgtk, "X": x, "Y": y})
+def drawObstacle(Canvas):
+    for obs in obstacles:
+        Canvas.create_image(obs["X"],obs["Y"], image=obs["img"], anchor="nw")
+def addFuel(x,y):
     img = Image.open("fuel.png")
     img = img.resize((18, 18), Image.ANTIALIAS)
     imgtk = ImageTk.PhotoImage(img)
     # Canvas.grid()
     global fuelIsl
-    obstacles.append(imgtk)
-    Canvas.create_image(x, y, image=imgtk, anchor="nw")
-
+    fuelIsl.append({"img": imgtk, "X": x, "Y": y})
+def drawFuel(Canvas):
+    for obs in fuelIsl:
+        Canvas.create_image(obs["X"],obs["Y"], image=obs["img"], anchor="nw")
+def drawOpen(Canvas):
+    for pos in SR.open:
+        x = pos[0]
+        y = pos[1]
+        Canvas.create_rectangle((x*20),(y*20),(x+1)*20,(y+1)*20,fill="brown")
 def drawGoal(Canvas, x, y):
     img = Image.open("goal.png")
     img = img.resize((40,20), Image.ANTIALIAS)
@@ -54,3 +62,14 @@ def drawGoal(Canvas, x, y):
     global goal
     goal= imgtk
     Canvas.create_image(x-7, y-3, image=goal, anchor="nw")
+def drawOpen(Canvas,O):
+    for pos in O:
+        Canvas.create_rectangle(pos.x*20,pos.y*20,(pos.x+1)*20,(pos.y+1)*20,fill = "red")
+def drawPath(Canvas,P):
+    for pos in P:
+        Canvas.create_rectangle(pos.x*20,pos.y*20,(pos.x+1)*20,(pos.y+1)*20,fill = "green")
+def drawClose(Canvas,C):
+    for pos in C:
+        Canvas.create_rectangle(pos.x*20,pos.y*20,(pos.x+1)*20,(pos.y+1)*20,fill = "pink")
+def drawCurrent(Canvas,pos):
+    Canvas.create_rectangle(pos.x * 20, pos.y * 20, (pos.x + 1) * 20, (pos.y + 1) * 20, fill="yellow")

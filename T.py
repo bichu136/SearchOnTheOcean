@@ -11,7 +11,7 @@ try:
     import Tkinter as tk
 except ImportError:
     import tkinter as tk
-
+    from tkinter import messagebox
 try:
     import ttk
     py3 = False
@@ -19,21 +19,16 @@ except ImportError:
     import tkinter.ttk as ttk
     py3 = True
 import draw
-from SearchingRecursive import *
+import time
+import SearchingRecursive as SR
+import OnTheOceanObject as MyObj
 SearchAlgo = None
-obstacles = []
-fuels = []
-boat = None
-goal = None
-grid = []
+
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
-    global val, w, root,top,grid,SearchAlgo
-    for i in range(25):
-        grid.append(([None]*25))
+    global val, w, root,top,map,SearchAlgo,width,height
     root = tk.Tk()
-    SearchAlgo = tk.IntVar()
-    top = TopLvl (root)
+    top = TopLvl(height = 25 ,width = 25 ,top = root)
     root.mainloop()
 
 w = None
@@ -85,60 +80,24 @@ class TopLvl:
         self.CnvOcean.configure(borderwidth="1")
         self.CnvOcean.configure(relief="ridge")
         self.CnvOcean.configure(selectbackground="#c4c4c4")
-        self.CnvOcean.bind('<Button-1>',CanvasClick)
+        self.CnvOcean.bind('<Button-1>',CanvasClick
+                           )
         self.BtnOne = tk.Button(top)
-        self.BtnOne.place(relx=0.706, rely=0.294, height=28, width=67)
+        self.BtnOne.place(relx=0.65, rely=0.10, height=28, width=67)
         self.BtnOne.configure(activebackground="#f9f9f9")
         self.BtnOne.configure(text='''next step''')
-        self.BtnOne.configure(command = None)
+        self.BtnOne.configure(command = BtnOneClick)
         self.BtnFinish = tk.Button(top)
-        self.BtnFinish.place(relx=0.82, rely=0.294, height=28, width=100)
+        self.BtnFinish.place(relx=0.65, rely=0.15, height=28, width=100)
         self.BtnFinish.configure(activebackground="#f9f9f9")
         self.BtnFinish.configure(text='''solve this map''')
         self.BtnFinish.configure(command = BtnFinishClick)
-
-        self.RdBtnDFS = tk.Radiobutton(top)
-        self.RdBtnDFS.place(relx=0.718, rely=0.088, relheight=0.042
-                            , relwidth=0.097)
-        self.RdBtnDFS.configure(activebackground="#f9f9f9")
-        self.RdBtnDFS.configure(justify='left')
-        self.RdBtnDFS.configure(text='''DFS''')
-        self.RdBtnDFS.configure(variable = SearchAlgo)
-        self.RdBtnDFS.configure(value=0)
-
-        self.RdBtnBFS = tk.Radiobutton(top)
-        self.RdBtnBFS.place(relx=0.716, rely=0.189, relheight=0.042
-                            , relwidth=0.097)
-        self.RdBtnBFS.configure(activebackground="#f9f9f9")
-        self.RdBtnBFS.configure(justify='left')
-        self.RdBtnBFS.configure(text='''BFS''')
-        self.RdBtnBFS.configure(variable = SearchAlgo)
-        self.RdBtnBFS.configure(value=1)
-
-        self.RdBtnIDS = tk.Radiobutton(top)
-        self.RdBtnIDS.place(relx=0.726, rely=0.14, relheight=0.042
-                            , relwidth=0.073)
-        self.RdBtnIDS.configure(activebackground="#f9f9f9")
-        self.RdBtnIDS.configure(justify='left')
-        self.RdBtnIDS.configure(text='''IDS''')
-        self.RdBtnIDS.configure(variable = SearchAlgo)
-        self.RdBtnIDS.configure(value=2)
-
-        self.RdBtnLowCost = tk.Radiobutton(top)
-        self.RdBtnLowCost.place(relx=0.706, rely=0.239, relheight=0.042
-                                , relwidth=0.149)
-        self.RdBtnLowCost.configure(activebackground="#f9f9f9")
-        self.RdBtnLowCost.configure(justify='left')
-        self.RdBtnLowCost.configure(text='''LowCost''')
-        self.RdBtnLowCost.configure(variable = SearchAlgo)
-        self.RdBtnLowCost.configure(value=3)
-
         self.menubar = tk.Menu(top, font="TkMenuFont", bg=_bgcolor, fg=_fgcolor)
         top.configure(menu=self.menubar)
 
         self.LstObject = tk.Listbox(top)
         self.LstObject.place(relx=0.681, rely=0.478, relheight=0.134
-                            , relwidth=0.299)
+                            , relwidth=0.15)
         self.LstObject.configure(background="white")
         self.LstObject.configure(cursor="fleur")
         self.LstObject.configure(font="TkFixedFont")
@@ -150,38 +109,85 @@ class TopLvl:
 
 
         self.TSeparator1 = ttk.Separator(top)
-        self.TSeparator1.place(relx=0.651, rely=0.377, relwidth=0.407)
+        self.TSeparator1.place(relx=0.651, rely=0.377, relwidth=0.3)
 
         self.Label1 = tk.Label(top)
-        self.Label1.place(relx=0.656, rely=0.386, height=42, width=238)
-        self.Label1.configure(text='''Chọn Đối tượng để thêm vào bản đồ''')
+        self.Label1.place(relx=0.65, rely=0.386, height=50, width=150)
+        self.Label1.configure(text='''Chọn Đối tượng''')
 
         self.Text1 = tk.Text(top)
-        self.Text1.place(relx=0.832, rely=0.68, relheight=0.04, relwidth=0.083)
+        self.Text1.place(relx=0.656, rely=0.73, relheight=0.04, relwidth=0.083)
         self.Text1.configure(background="white")
         self.Text1.configure(font="TkTextFont")
         self.Text1.configure(selectbackground="#c4c4c4")
         self.Text1.configure(wrap="word")
 
         self.Label2 = tk.Label(top)
-        self.Label2.place(relx=0.656, rely=0.68, height=28, width=134)
-        self.Label2.configure(text='''Lượng xăng hiện tại''')
-    def __init__(self, top=None):
+        self.Label2.place(relx=0.656, rely=0.68, height=28, width=200)
+        self.Label2.configure(text='''số km đi đc khi đầy bình :''')
+        self.LblFuel = tk.Label(top)
+
+    def __init__(self, height,width,top = None):
         self.initializeComponent(top)
+        self.map = MyObj.Map(height,width)
+        for i in range(height):
+            self.map.grids.append([])
+            for j in range(width):
+                self.map.grids.append(MyObj.Grid())
         draw.drawGrid(self.CnvOcean)
     def Btn(self):
         pass
 def BtnOneClick():
-    top.CnvOcean.configure(command=None)
-    recursive(False)
+    if SR.boat is None:
+        messagebox.showerror("lỗi", "ko thấy con thuyền")
+        return
+    if SR.goal is None:
+        messagebox.showerror("lỗi","ko thấy đích")
+        return
+    if SR.fuel_a is None:
+        try:
+            SR.fuel_a = int(top.Text1.get("1.0","end-1c"))
+        except:
+            print("co loi say ra")
+            return
+    if SR.open == []:
+        print("no solution")
+        return
+    # doOneStep
+    SR.bfs_recursive(top.map)
+    #print(SR.open[0], top.map.grids[SR.open[0].y][SR.open[0].x].current_fuel)
+    draw.drawOpen(top.CnvOcean,SR.open)
+    draw.drawClose(top.CnvOcean,SR.close)
+    draw.drawBoat(top.CnvOcean,SR.boat.x*20,SR.boat.y*20)
+    if SR.path:
+        draw.drawPath(top.CnvOcean,SR.path)
+    draw.drawFuel(top.CnvOcean)
+    draw.drawObstacle(top.CnvOcean)
+    draw.drawGoal(top.CnvOcean, SR.goal.x * 20, SR.goal.y * 20)
+    top.LblFuel2.configure(text = '''{}'''.format(SR.fuel_a))
+    if open !=[]:
+        draw.drawCurrent(top.CnvOcean,SR.open[0])
+    #draw.drawOpen()
 def BtnFinishClick():
-    global top
-    top.CnvOcean.configure(command=None)
-    recursive(True)
+    #DoAllStep
+    if SR.fuel_a is None:
+        try:
+            SR.fuel_a = int(top.Text1.get("1.0","end-1c"))
+        except:
+            print("co loi say ra")
+            return
+    while(SR.path ==[] and SR.open != []):
+        SR.bfs_recursive(top.map)
+    draw.drawOpen(top.CnvOcean, SR.open)
+    draw.drawClose(top.CnvOcean, SR.close)
+    draw.drawBoat(top.CnvOcean, SR.boat.x * 20, SR.boat.y * 20)
+    if SR.path:
+        draw.drawPath(top.CnvOcean, SR.path)
+    draw.drawFuel(top.CnvOcean)
+    draw.drawObstacle(top.CnvOcean)
+    draw.drawGoal(top.CnvOcean, SR.goal.x * 20, SR.goal.y * 20)
 
-        #timer
 def CanvasClick(event):
-    global boat,goal
     x = event.x
     y = event.y
     x = x - (x%20)
@@ -195,84 +201,35 @@ def CanvasClick(event):
         draw.drawBoat(top.CnvOcean, x, y)
         x = x // 20
         y = y // 20
-        if(boat == None):
-            boat = [0,1]
+        if(SR.boat is None):
+            SR.boat = MyObj.pos(x,y)
         else:
-            boat[0] = x
-            boat[1] = y
+            SR.boat.x = x
+            SR.boat.y = y
 
     elif r == 1:
-
-        draw.drawObstacle(top.CnvOcean,x,y)
+        draw.addObstacles(x,y)
+        draw.drawObstacle(top.CnvOcean)
         x = x // 20
         y = y // 20
-        grid[x][y] = 0
+        top.map.grids[y][x].type = 1
     elif r==2:
-        draw.drawFuel(top.CnvOcean, x, y)
+        draw.addFuel(x,y)
+        draw.drawFuel(top.CnvOcean)
         x = x // 20
         y = y // 20
-        grid[x][y] = 1
+        top.map.grids[y][x].type = 2
 
     elif r == 3:
         draw.drawGoal(top.CnvOcean, x, y)
         x = x // 20
         y = y // 20
-        if (goal ==None):
-            goal =[x,y]
+        if (SR.goal is None):
+            SR.goal =MyObj.pos(x,y)
         else:
-            goal[0] = x
-            goal[1] = y
-
+            SR.goal.x = x
+            SR.goal.y = y
     else:
         print("bạn chưa chọn chức năng hoặc chức năng đó chưa đc cài ")
-
-
-def can_go():
-    global boat,grid
-    up = grid[boat[0]][boat[1]-1]
-    down = grid[boat[0]][boat[1]+1]
-    left = grid[boat[0]-1][boat[1]]
-    right = grid[boat[0]+1][boat[1]]
-
-def go(Direction= "up"):
-
-    global grid
-    x = boat.posx//20
-    y = boat.posy//20
-    grid[x][y] = None
-    if Direction == "up":
-        boat.posy -=20
-    elif Direction == "down":
-        boat.posy += 20
-    elif Direction == "left":
-        boat.posx -= 20
-    elif Direction == "right":
-        boat.posy += 20
-
-    grid[y][x] = boat
-    draw.drawBoat(top.CnvOcean,boat.posx,boat.posy)
-
-
-
-def recursive(b):
-    sel = SearchAlgo.get()
-    if sel == 0:
-        DFSrecursive()
-    elif sel == 1:
-        BFSrecursive()
-    elif sel == 2:
-        IDFrecursive()
-    elif sel == 3:
-        LowCostRecursive()
-
-    if (goal.posx == boat.posx and goal.posy == boat.posy):
-        return
-    if (b == True):
-        top.CnvOcean.after(10, recursive(True))
-
 if __name__ == '__main__':
-
     vp_start_gui()
-
-
-
